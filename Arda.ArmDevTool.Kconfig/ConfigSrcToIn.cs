@@ -23,7 +23,7 @@
 //  Date         Notes
 //  2015-09-15   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: ConfigSrcToIn.cs 1679 2018-01-25 04:00:30Z fupengfei                 $
+//  $Id:: ConfigSrcToIn.cs 1683 2018-01-26 06:55:11Z fupengfei                 $
 //------------------------------------------------------------------------------
 
 using System;
@@ -40,7 +40,7 @@ namespace Arda.ArmDevTool.Kconfig
     /// <summary>
     /// convert config.src to config.in. 
     /// Inset all config item from *.c files into "INSERT" point.
-    /// for "busybox"
+    /// for "busy-box"
     /// </summary>
     public static class ConfigSrcToIn
     {

@@ -16,14 +16,14 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //------------------------------------------------------------------------------
 //  Project    : Arda Kconfig Library
-//  Description: Kconfig element type and value enum
+//  Description: Kconfig element type and enumerable value
 //  Author     : Fu Pengfei
 //------------------------------------------------------------------------------
 //  Change Logs:
 //  Date         Notes
 //  2015-09-15   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: TypeEnums.cs 1679 2018-01-25 04:00:30Z fupengfei                     $
+//  $Id:: TypeEnums.cs 1683 2018-01-26 06:55:11Z fupengfei                     $
 //------------------------------------------------------------------------------
 namespace Arda.ArmDevTool.Kconfig
 {

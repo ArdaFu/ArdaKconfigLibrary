@@ -23,7 +23,7 @@
 //  Date         Notes
 //  2015-09-15   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: MenuEntry.cs 1679 2018-01-25 04:00:30Z fupengfei                     $
+//  $Id:: MenuEntry.cs 1685 2018-01-26 07:37:32Z fupengfei                     $
 //------------------------------------------------------------------------------
 using System;
 using System.Collections;
@@ -174,13 +174,7 @@ namespace Arda.ArmDevTool.Kconfig
         public string Prompt
         {
             get => _prompt;
-            set
-            {
-                if (_prompt == value)
-                    return;
-                _prompt = value;
-                OnPropertyChanged(nameof(Prompt));
-            }
+            set => SetProperty(ref _prompt, value);
         }
 
         /// <summary>
@@ -194,13 +188,7 @@ namespace Arda.ArmDevTool.Kconfig
         public string Default
         {
             get => _default;
-            set
-            {
-                if (_default == value)
-                    return;
-                _default = value;
-                OnPropertyChanged(nameof(Default));
-            }
+            set=>SetProperty(ref _default, value);
         }
 
         /// <summary>
@@ -209,13 +197,7 @@ namespace Arda.ArmDevTool.Kconfig
         public bool IsVisible
         {
             get => _isVisable;
-            set
-            {
-                if (_isVisable == value)
-                    return;
-                _isVisable = value;
-                OnPropertyChanged(nameof(IsVisible));
-            }
+            set => SetProperty(ref _isVisable, value);
         }
 
         /// <summary>
@@ -224,13 +206,7 @@ namespace Arda.ArmDevTool.Kconfig
         public bool IsEnable
         {
             get => _isEnable;
-            set
-            {
-                if (_isEnable == value)
-                    return;
-                _isEnable = value;
-                OnPropertyChanged(nameof(IsEnable));
-            }
+            set => SetProperty(ref _isEnable, value);
         }
 
         /// <summary>
@@ -239,11 +215,7 @@ namespace Arda.ArmDevTool.Kconfig
         public bool IsSelected
         {
             get => _isSelected;
-            set
-            {
-                _isSelected = value;
-                OnPropertyChanged(nameof(IsSelected));
-            }
+            set => SetProperty(ref _isSelected, value);
         }
 
         /// <summary>
@@ -252,11 +224,7 @@ namespace Arda.ArmDevTool.Kconfig
         public bool IsExpanded
         {
             get => _isExpanded;
-            set
-            {
-                _isExpanded = value;
-                OnPropertyChanged(nameof(IsExpanded));
-            }
+            set => SetProperty(ref _isExpanded, value);
         }
 
         /// <summary>
@@ -543,8 +511,16 @@ namespace Arda.ArmDevTool.Kconfig
 
         protected virtual void OnPropertyChanged(
             [CallerMemberName] string propertyName = null)
+            => PropertyChanged?.Invoke(this, 
+                new PropertyChangedEventArgs(propertyName));
+
+        protected void SetProperty<T>(ref T storage, T value,
+            [CallerMemberName] string propertyName = null)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            if (Equals(storage, value))
+                return;
+            storage = value;
+            OnPropertyChanged(propertyName);
         }
 
         public bool HasErrors => _errors.Count > 0;

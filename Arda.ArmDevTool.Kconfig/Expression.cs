@@ -16,14 +16,14 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //------------------------------------------------------------------------------
 //  Project    : Arda Kconfig Library
-//  Description: Expression calculaton
+//  Description: Expression calculation
 //  Author     : Fu Pengfei
 //------------------------------------------------------------------------------
 //  Change Logs:
 //  Date         Notes
 //  2015-09-15   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: Expression.cs 1679 2018-01-25 04:00:30Z fupengfei                    $
+//  $Id:: Expression.cs 1683 2018-01-26 06:55:11Z fupengfei                    $
 //------------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
@@ -43,7 +43,7 @@ namespace Arda.ArmDevTool.Kconfig
         /// </summary>
         public ExpressionType Type;
         /// <summary>
-        /// Left calcualte data
+        /// Left calculate data
         /// </summary>
         public ExpressionData Left;
         /// <summary>
