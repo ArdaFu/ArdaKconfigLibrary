@@ -16,7 +16,7 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //------------------------------------------------------------------------------
 //  Project    : Arda Kconfig Library
-//  File       : DotConfigIo.cs
+//  File       : KConfig.Process.cs
 //  Description: Process the structure, from hierarchical to flat
 //  Author     : Fu Pengfei
 //------------------------------------------------------------------------------
@@ -24,7 +24,7 @@
 //  Date         Notes
 //  2015-09-15   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: KConfig.Process.cs 1679 2018-01-25 04:00:30Z fupengfei               $
+//  $Id:: KConfig.Process.cs 1762 2018-03-19 07:57:23Z arda                    $
 //------------------------------------------------------------------------------
 using System;
 using System.Collections.Concurrent;
@@ -74,7 +74,7 @@ namespace Arda.ArmDevTool.Kconfig
         /// <param name="entryList"></param>
         public static void GenExpr(HashSet<MenuEntry> entryList)
         {
-            Parallel.ForEach(entryList, entry =>
+            foreach (var entry in entryList)
             {
                 try
                 {
@@ -125,7 +125,7 @@ namespace Arda.ArmDevTool.Kconfig
                     throw new ParseException(e.Message, e, entry.Location);
                 }
 
-            });
+            }
         }
 
         /// <summary>
