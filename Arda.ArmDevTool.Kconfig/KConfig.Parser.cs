@@ -23,7 +23,7 @@
 //  Date         Notes
 //  2015-09-15   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: KConfig.Parser.cs 1679 2018-01-25 04:00:30Z fupengfei                $
+//  $Id:: KConfig.Parser.cs 1771 2018-03-22 14:51:47Z fupengfei                $
 //------------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
@@ -278,6 +278,7 @@ namespace Arda.ArmDevTool.Kconfig
                         $"({attrDependsOn.Condition})&&({inStr})";
                     return;
                 }
+
                 entry.Attributes.Add(new MenuAttribute
                 {
                     AttributeType = MenuAttributeType.DependsOn,
@@ -334,6 +335,7 @@ namespace Arda.ArmDevTool.Kconfig
                     sb.AppendLine(helpLine);
                     continue;
                 }
+
                 var indentationLevel = GetStartBlankLength(helpLine);
                 if (firstIndentationLevel == 0)
                     firstIndentationLevel = indentationLevel;
@@ -343,6 +345,7 @@ namespace Arda.ArmDevTool.Kconfig
                     sr.PushBackLastLine();
                     break;
                 }
+
                 sb.AppendLine(helpLine.Substring(firstIndentationLevel));
             }
 
@@ -478,6 +481,7 @@ namespace Arda.ArmDevTool.Kconfig
                     return;
                 envVal = RemoveQuotationMark(attrDefault.SymbolValue);
             }
+
             Environment.SetEnvironmentVariable(entry.Name.Substring(1),
                 envVal, EnvironmentVariableTarget.Process);
         }
@@ -487,13 +491,13 @@ namespace Arda.ArmDevTool.Kconfig
         /// <summary>
         /// Parse kconfig file to menu entry
         /// </summary>
-        /// <param name="fileName">kconfig file name</param>
+        /// <param name="path">top Kconfig file name, or root folder which contains the top Kconfig file</param>
         /// <param name="tabWidth">tab width, using for replace tab with whitespace</param>
         /// <returns>menu entry</returns>
-        public static async Task<MenuEntry> Parse(string fileName, int tabWidth = 4)
+        public static async Task<MenuEntry> Parse(string path, int tabWidth = 4)
         {
-            var attr = File.GetAttributes(fileName);
-            var name = (attr.HasFlag(FileAttributes.Directory)) ? $"{fileName}\\KConfig" : fileName;
+            var attr = File.GetAttributes(path);
+            var name = (attr.HasFlag(FileAttributes.Directory)) ? $"{path}\\Kconfig" : path;
 
             if (!File.Exists(name))
             {
@@ -506,19 +510,19 @@ namespace Arda.ArmDevTool.Kconfig
             if (!string.IsNullOrEmpty(filePath))
                 Directory.SetCurrentDirectory(filePath);
 
+            // split kconfig file name from path
+            var fileName = Path.GetFileName(name);
 
             // create root menu entry (main menu)
             var mainMenuEntry = new MenuEntry {EntryType = MenuEntryType.MainMenu};
             int st;
-            using (var sr = new FileReader(name, tabWidth))
+            using (var sr = new FileReader(fileName, tabWidth))
                 st = await ParseEntryBlock(sr, mainMenuEntry);
             if (st == 0)
                 return mainMenuEntry;
 
             Console.WriteLine($"Fail to parse file. File name = {name}. error = {st}", Brushes.Red);
             return null;
-
-
         }
 
         #region Parse entry method
@@ -600,6 +604,7 @@ namespace Arda.ArmDevTool.Kconfig
                     sr.PushBackLastLine();
                     return 0;
                 }
+
                 int st;
                 MenuEntry childEntry;
                 switch (entryType)
@@ -729,6 +734,7 @@ namespace Arda.ArmDevTool.Kconfig
                             $"Found invalid \"{attributeType}\" attribute for config.");
                 }
             }
+
             if (isOptionEnv)
                 SetEnvironmentVariable(parentEntry);
             return 0;
@@ -779,6 +785,7 @@ namespace Arda.ArmDevTool.Kconfig
                             $"Found invalid \"{attributeType}\" attribute for menu.");
                 }
             }
+
             return await ParseEntryBlock(sr, parentEntry);
         }
 
@@ -983,6 +990,7 @@ namespace Arda.ArmDevTool.Kconfig
                 Console.WriteLine($"Source file do not exist. name = {nameTemp}. {sr.GetLocation()}", Brushes.Red);
                 return 0;
             }
+
             using (var fr = new FileReader(nameTemp, sr.TabWidth))
                 return await ParseEntryBlock(fr, parentEntry);
         }

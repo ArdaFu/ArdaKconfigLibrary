@@ -23,7 +23,7 @@
 //  Date         Notes
 //  2015-09-15   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: KConfigIo.cs 1679 2018-01-25 04:00:30Z fupengfei                     $
+//  $Id:: KConfigIo.cs 1771 2018-03-22 14:51:47Z fupengfei                     $
 //------------------------------------------------------------------------------
 using System;
 using System.IO;
@@ -336,6 +336,7 @@ namespace Arda.ArmDevTool.Kconfig
     /// <summary>
     /// Kconfig parse exception with location information
     /// </summary>
+    [Serializable]
     public class ParseException : ApplicationException
     {
         public readonly EntryLocation Location;

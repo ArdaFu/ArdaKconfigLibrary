@@ -23,7 +23,7 @@
 //  Date         Notes
 //  2015-09-15   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: Expression.cs 1683 2018-01-26 06:55:11Z fupengfei                    $
+//  $Id:: Expression.cs 1771 2018-03-22 14:51:47Z fupengfei                    $
 //------------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
@@ -145,7 +145,7 @@ namespace Arda.ArmDevTool.Kconfig
                 case ExpressionType.Y:
                     return "y";
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    return "";
             }
 
         }

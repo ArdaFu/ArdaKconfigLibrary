@@ -23,7 +23,7 @@
 //  Date         Notes
 //  2015-09-15   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: MenuEntry.cs 1685 2018-01-26 07:37:32Z fupengfei                     $
+//  $Id:: MenuEntry.cs 1770 2018-03-22 03:48:50Z arda                          $
 //------------------------------------------------------------------------------
 using System;
 using System.Collections;
@@ -61,6 +61,9 @@ namespace Arda.ArmDevTool.Kconfig
         /// </summary>
         public List<MenuEntry> ChildEntries { get; set; }
 
+        /// <summary>
+        /// Entry's parent entry
+        /// </summary>
         public MenuEntry ParentEntry { get; set; }
 
         /// <summary>
