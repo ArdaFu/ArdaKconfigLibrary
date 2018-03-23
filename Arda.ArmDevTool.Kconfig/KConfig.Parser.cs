@@ -23,7 +23,7 @@
 //  Date         Notes
 //  2015-09-15   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: KConfig.Parser.cs 1771 2018-03-22 14:51:47Z fupengfei                $
+//  $Id:: KConfig.Parser.cs 1772 2018-03-23 02:11:49Z arda                     $
 //------------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
@@ -489,6 +489,11 @@ namespace Arda.ArmDevTool.Kconfig
         #endregion // Parse attribute method
 
         /// <summary>
+        /// Default kconfig file name. Append this when parse input path is a directory.
+        /// </summary>
+        public static string DefaultKconfigFileName = "Kconfig";
+
+        /// <summary>
         /// Parse kconfig file to menu entry
         /// </summary>
         /// <param name="path">top Kconfig file name, or root folder which contains the top Kconfig file</param>
@@ -497,7 +502,9 @@ namespace Arda.ArmDevTool.Kconfig
         public static async Task<MenuEntry> Parse(string path, int tabWidth = 4)
         {
             var attr = File.GetAttributes(path);
-            var name = (attr.HasFlag(FileAttributes.Directory)) ? $"{path}\\Kconfig" : path;
+            var name = (attr.HasFlag(FileAttributes.Directory))
+                ? $"{path}\\{DefaultKconfigFileName}"
+                : path;
 
             if (!File.Exists(name))
             {
@@ -554,33 +561,31 @@ namespace Arda.ArmDevTool.Kconfig
         /// </summary>
         /// <param name="parentEntry"></param>
         /// <param name="childEntry"></param>
-        private static List<MenuEntry> AddEntryToParentEntry(MenuEntry parentEntry, MenuEntry childEntry)
+        private static List<MenuEntry> AddEntryToParentEntry(MenuEntry parentEntry, 
+            MenuEntry childEntry)
         {
-
+            // skip when child entry count is zero
             if (parentEntry.ChildEntries.Count == 0)
-            {
                 return parentEntry.ChildEntries;
-
-            }
 
             var lastChildEntry = parentEntry.ChildEntries[parentEntry.ChildEntries.Count - 1];
-            if (lastChildEntry.EntryType != MenuEntryType.MenuConfig)
-            {
-                return parentEntry.ChildEntries;
-            }
 
+            // skip when child entry is not menu config
+            if (lastChildEntry.EntryType != MenuEntryType.MenuConfig)
+                return parentEntry.ChildEntries;
+
+            // process if block
             if ((childEntry.EntryType == MenuEntryType.If) &&
                 (childEntry.Name == lastChildEntry.Name))
-            {
                 return lastChildEntry.ChildEntries;
-            }
 
+            // process depends on
             if (childEntry.Attributes.Any(attribute =>
                 attribute.AttributeType == MenuAttributeType.DependsOn
                 && attribute.Condition == lastChildEntry.Name))
                 return lastChildEntry.ChildEntries;
-            else
-                return parentEntry.ChildEntries;
+
+            return parentEntry.ChildEntries;
         }
 
         /// <summary>
@@ -878,7 +883,8 @@ namespace Arda.ArmDevTool.Kconfig
                         choiceValueType = attributeType;
                         break;
                     case MenuAttributeType.Prompt:
-                        ParseAttrWithValAndCond(sr, parentEntry, RemoveQuotationMark(val), attributeType);
+                        ParseAttrWithValAndCond(sr, parentEntry, RemoveQuotationMark(val), 
+                            attributeType);
                         break;
                     case MenuAttributeType.Default:
                     case MenuAttributeType.Select:
@@ -987,7 +993,8 @@ namespace Arda.ArmDevTool.Kconfig
 
             if (!File.Exists(nameTemp))
             {
-                Console.WriteLine($"Source file do not exist. name = {nameTemp}. {sr.GetLocation()}", Brushes.Red);
+                Console.WriteLine($"Source file do not exist. name = {nameTemp}. {sr.GetLocation()}",
+                    Brushes.Red);
                 return 0;
             }
 
