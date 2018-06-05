@@ -39,8 +39,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Xaml" />
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
@@ -54,12 +56,29 @@
     <Compile Include="MenuEntry.cs" />
     <Compile Include="KConfig.Parser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UcKconfigTreeView.xaml.cs">
+      <DependentUpon>UcKconfigTreeView.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Content Include="kconfig-language.txt" />
+    <Resource Include="Resources\source.png" />
+    <Resource Include="Resources\menuconfig.png" />
+    <Resource Include="Resources\menu.png" />
+    <Resource Include="Resources\mainmenu.png" />
+    <Resource Include="Resources\if.png" />
+    <Resource Include="Resources\config.png" />
+    <Resource Include="Resources\comment.png" />
+    <Resource Include="Resources\choice.png" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="KConfig.Process.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="UcKconfigTreeView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

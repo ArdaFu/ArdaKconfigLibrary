@@ -1,8 +1,8 @@
 ﻿using System.Reflection;
 using System.Runtime.InteropServices;
 
-[assembly: AssemblyTitle("ArdaKconfigLib")]
-[assembly: AssemblyDescription("Arda Kconfig Library")]
+[assembly: AssemblyTitle("Arda.Kconfig.Lib")]
+[assembly: AssemblyDescription("kconfig lib")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Arda")]
 [assembly: AssemblyProduct("ArdaKconfigTools")]
