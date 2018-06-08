@@ -23,7 +23,7 @@
 //  Date         Notes
 //  2015-09-15   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: MenuEntry.cs 1803 2018-06-08 05:28:40Z arda                          $
+//  $Id:: MenuEntry.cs 1804 2018-06-08 06:39:49Z arda                          $
 //------------------------------------------------------------------------------
 using System;
 using System.Collections;
@@ -301,6 +301,16 @@ namespace Arda.ArmDevTool.Kconfig
         private bool CheckValueValid(string str, out string error)
         {
             error = null;
+            if (EntryType == MenuEntryType.Choice)
+            {
+                if (IsHaveOptionalOption && str == null)
+                    return true;
+                if (ChildEntries.Exists(entry => entry.Name == str))
+                    return true;
+                error = "Choice value is not a valid child entry";
+                return false;
+            }
+
             if (EntryType != MenuEntryType.Config && EntryType != MenuEntryType.MenuConfig)
                 return true;
             switch (ValueType)
@@ -372,6 +382,36 @@ namespace Arda.ArmDevTool.Kconfig
         /// </summary>
         public bool IsHaveOptionalOption =>
              Attributes.Exists(attr => attr.AttributeType == MenuAttributeType.Optional);
+
+
+        private void LoadDefaultValue()
+        {
+            _value = Default;
+            // Set first entry as default
+            // when choice do not has "optional" and "Default" option.
+            if (EntryType != MenuEntryType.Choice)
+                return;
+            if (_value == null)
+            {
+                // do not modify value when value is null and has optional option.
+                if (IsHaveOptionalOption)
+                    return;
+                SetErrors(nameof(Value), new List<string>() { "Value is null and do not has optional option" });
+            }
+            else
+            {
+                // check if value is a valid child entry name
+                if (ChildEntries.Exists(entry => entry.Name == _value))
+                    return;
+                if (IsHaveOptionalOption)
+                {
+                    _value = null;
+                    return;
+                }
+                SetErrors(nameof(Value), new List<string>() { "Value is not a valid child entry name" });
+            }
+            _value = ChildEntries.First()?.Name;
+        }
 
         private static TristateValue CalculateValueMin(IEnumerable<MenuEntry> list)
         {
@@ -451,15 +491,7 @@ namespace Arda.ArmDevTool.Kconfig
                     Default = FindFirstAvaliable(MenuAttributeType.Default)?.SymbolValue;
                     if (isLoadDefault)
                     {
-                        _value = Default;
-                        // Set first entry as default
-                        // when choice do not has "optional" and "Default" option.
-                        if ((Default == null) &&
-                            (EntryType == MenuEntryType.Choice) &&
-                            (!IsHaveOptionalOption))
-                        {
-                            _value = ChildEntries.First()?.Name;
-                        }
+                        LoadDefaultValue();
                     }
 
                     if (!IsEnable)
