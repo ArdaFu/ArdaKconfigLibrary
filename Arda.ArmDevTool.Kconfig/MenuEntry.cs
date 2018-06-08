@@ -23,7 +23,7 @@
 //  Date         Notes
 //  2015-09-15   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: MenuEntry.cs 1770 2018-03-22 03:48:50Z arda                          $
+//  $Id:: MenuEntry.cs 1803 2018-06-08 05:28:40Z arda                          $
 //------------------------------------------------------------------------------
 using System;
 using System.Collections;
@@ -125,8 +125,7 @@ namespace Arda.ArmDevTool.Kconfig
                     return;
                 case TristateValue.N:
                     if (ParentEntry.Value == Name &&
-                        ParentEntry.Attributes.Any(attribute =>
-                            attribute.AttributeType == MenuAttributeType.Optional))
+                        ParentEntry.IsHaveOptionalOption)
                         ParentEntry.Value = null;
                     return;
                 default: // "M"
@@ -367,6 +366,13 @@ namespace Arda.ArmDevTool.Kconfig
                 && attribute.ConditionResult != TristateValue.N);
         }
 
+        /// <summary>
+        /// A choice accepts another option "optional", which allows to set the
+        /// choice to 'n' and no entry needs to be selected.
+        /// </summary>
+        public bool IsHaveOptionalOption =>
+             Attributes.Exists(attr => attr.AttributeType == MenuAttributeType.Optional);
+
         private static TristateValue CalculateValueMin(IEnumerable<MenuEntry> list)
         {
             var result = TristateValue.N;
@@ -444,7 +450,18 @@ namespace Arda.ArmDevTool.Kconfig
                     Prompt = FindFirstAvaliable(MenuAttributeType.Prompt)?.SymbolValue;
                     Default = FindFirstAvaliable(MenuAttributeType.Default)?.SymbolValue;
                     if (isLoadDefault)
+                    {
                         _value = Default;
+                        // Set first entry as default
+                        // when choice do not has "optional" and "Default" option.
+                        if ((Default == null) &&
+                            (EntryType == MenuEntryType.Choice) &&
+                            (!IsHaveOptionalOption))
+                        {
+                            _value = ChildEntries.First()?.Name;
+                        }
+                    }
+
                     if (!IsEnable)
                     {
                         IsVisible = false;
@@ -455,8 +472,6 @@ namespace Arda.ArmDevTool.Kconfig
                     if (ParentEntry.EntryType == MenuEntryType.Choice)
                         CalculateConfigInChoice();
                     PrecessReverseDependency(sourceEntry);
-
-
                     break;
                 default:
                     Console.WriteLine(
