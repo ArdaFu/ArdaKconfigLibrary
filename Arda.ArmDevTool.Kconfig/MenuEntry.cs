@@ -23,7 +23,7 @@
 //  Date         Notes
 //  2015-09-15   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: MenuEntry.cs 1804 2018-06-08 06:39:49Z arda                          $
+//  $Id:: MenuEntry.cs 1805 2018-06-15 09:30:36Z fupengfei                     $
 //------------------------------------------------------------------------------
 using System;
 using System.Collections;
@@ -455,7 +455,14 @@ namespace Arda.ArmDevTool.Kconfig
                 OnPropertyChanged(nameof(Value));
         }
 
-
+        /// <summary>
+        /// Calculate the value. 
+        /// </summary>
+        /// <param name="sourceEntry">Reverse dependency entries</param>
+        /// <param name="isCalculateControls">Whether calculate child entries. 
+        /// This should not be used with <see cref="isLoadDefault"/></param>
+        /// <param name="isLoadDefault">Whether load default value.
+        /// This should not be used with <see cref="isCalculateControls"/></param>
         public void Calculate(MenuEntry sourceEntry,
             bool isCalculateControls = true, bool isLoadDefault = false)
         {
@@ -489,7 +496,11 @@ namespace Arda.ArmDevTool.Kconfig
                 case MenuEntryType.Choice:
                     Prompt = FindFirstAvaliable(MenuAttributeType.Prompt)?.SymbolValue;
                     Default = FindFirstAvaliable(MenuAttributeType.Default)?.SymbolValue;
-                    if (isLoadDefault)
+
+                    // For those hidden entries which prompt is null. 
+                    // Since user could not modify them, they should be calculated automatically
+                    // by auto load default value.
+                    if (isLoadDefault || Prompt == null)
                     {
                         LoadDefaultValue();
                     }

@@ -23,7 +23,7 @@
 //  Date         Notes
 //  2015-09-15   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: KConfig.Parser.cs 1772 2018-03-23 02:11:49Z arda                     $
+//  $Id:: KConfig.Parser.cs 1805 2018-06-15 09:30:36Z fupengfei                $
 //------------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
@@ -242,8 +242,9 @@ namespace Arda.ArmDevTool.Kconfig
         /// <param name="entry">attribute will add to this entry</param>
         /// <param name="type">attribute type</param>
         /// <param name="sr">for get location</param>
+        /// <param name="isRemoveQuotationMark">whether remove quotation mark from value expression</param>
         private static void ParseAttrWithValAndCond(FileReader sr, MenuEntry entry, string inStr,
-            MenuAttributeType type)
+            MenuAttributeType type, bool isRemoveQuotationMark = false)
         {
             // <type> < expression > ["if" < condition >]
             if (!GetAttributeSymbolValueCodition(inStr, out var expression, out var condition))
@@ -251,7 +252,7 @@ namespace Arda.ArmDevTool.Kconfig
             entry.Attributes.Add(new MenuAttribute
             {
                 AttributeType = type,
-                SymbolValue = expression,
+                SymbolValue = isRemoveQuotationMark? RemoveQuotationMark(expression) : expression,
                 Condition = condition,
             });
         }
@@ -710,7 +711,7 @@ namespace Arda.ArmDevTool.Kconfig
                     // input prompt: "prompt" <prompt> ["if" <expr>]
                     case MenuAttributeType.Default:
                         // default value: "default" <expr> ["if" <expr>]
-                        ParseAttrWithValAndCond(sr, parentEntry, RemoveQuotationMark(val), attributeType);
+                        ParseAttrWithValAndCond(sr, parentEntry, val, attributeType, true);
                         break;
                     case MenuAttributeType.Select:
                     // reverse dependencies: "select" <symbol> ["if" <expr>]

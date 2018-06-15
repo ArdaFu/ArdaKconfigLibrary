@@ -23,7 +23,7 @@
 //  Date         Notes
 //  2015-09-15   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: DotConfigIo.cs 1679 2018-01-25 04:00:30Z fupengfei                   $
+//  $Id:: DotConfigIo.cs 1805 2018-06-15 09:30:36Z fupengfei                   $
 //------------------------------------------------------------------------------
 using System.Collections.Generic;
 using System.IO;
@@ -120,6 +120,7 @@ namespace Arda.ArmDevTool.Kconfig
             }
             return list;
         }
+
         /// <summary>
         /// Write a nest entry to file writer
         /// </summary>
@@ -135,17 +136,11 @@ namespace Arda.ArmDevTool.Kconfig
                 case MenuEntryType.MainMenu:
                     await sw.WriteLineAsync(
                         $"#\n# Automatically generated file; DO NOT EDIT.\n# {entry.Prompt}\n#");
-                    foreach (var childEntry in entry.ChildEntries)
-                        await WriteEntry(childEntry, sw);
                     break;
                 case MenuEntryType.Menu:
                     await sw.WriteLineAsync($"\n#\n# {entry.Prompt}\n#");
-                    foreach (var childEntry in entry.ChildEntries)
-                        await WriteEntry(childEntry, sw);
                     break;
                 case MenuEntryType.Choice:
-                    foreach (var childEntry in entry.ChildEntries)
-                        await WriteEntry(childEntry, sw);
                     break;
                 case MenuEntryType.Config:
                 case MenuEntryType.MenuConfig:
@@ -161,6 +156,7 @@ namespace Arda.ArmDevTool.Kconfig
                             break;
                         }
                     }
+
                     if (entry.ValueType == MenuAttributeType.String)
                         await sw.WriteLineAsync($"CONFIG_{entry.Name}=\"{entry.Value}\"");
                     else
@@ -168,8 +164,12 @@ namespace Arda.ArmDevTool.Kconfig
                     break;
                 case MenuEntryType.Comment:
                     await sw.WriteLineAsync($"# {entry.Prompt}");
-                    break;
+                    return;
             }
+
+            if (entry.ChildEntries != null)
+                foreach (var childEntry in entry.ChildEntries)
+                    await WriteEntry(childEntry, sw);
         }
 
         /// <summary>
