@@ -23,7 +23,7 @@
 //  Date         Notes
 //  2015-09-15   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: MenuEntry.cs 1808 2018-06-16 15:34:00Z fupengfei                     $
+//  $Id:: MenuEntry.cs 1809 2018-06-16 15:41:29Z fupengfei                     $
 //------------------------------------------------------------------------------
 using System;
 using System.Collections;
@@ -429,7 +429,7 @@ namespace Arda.ArmDevTool.Kconfig
             else
             {
                 // check if value is a valid child entry name
-                if (ChildEntries.Exists(entry => entry.Name == _value))
+                if (ChildEntries.Exists(entry => entry.Name == value))
                     return value;
                 if (IsHaveOptionalOption)
                     return null;
