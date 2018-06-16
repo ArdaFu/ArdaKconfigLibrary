@@ -23,7 +23,7 @@
 //  Date         Notes
 //  2015-09-15   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: MenuEntry.cs 1805 2018-06-15 09:30:36Z fupengfei                     $
+//  $Id:: MenuEntry.cs 1807 2018-06-16 09:46:42Z fupengfei                     $
 //------------------------------------------------------------------------------
 using System;
 using System.Collections;
@@ -383,34 +383,53 @@ namespace Arda.ArmDevTool.Kconfig
         public bool IsHaveOptionalOption =>
              Attributes.Exists(attr => attr.AttributeType == MenuAttributeType.Optional);
 
-
+        /// <summary>
+        /// Load default and check value valid.
+        /// null for bool and tristate which is same as "n".
+        /// "0" or range min for int or hex.
+        /// null for choice with Optional option
+        /// first child entry name for choice without Optional option
+        /// </summary>
         private void LoadDefaultValue()
         {
-            _value = Default;
+            Value = Default;
+            if (ValueType == MenuAttributeType.Int || ValueType == MenuAttributeType.Hex)
+            {
+                if (Value == null)
+                {
+                    var rangeAttr = FindFirstAvaliable(MenuAttributeType.Range);
+                    if (rangeAttr == null)
+                    {
+                        Value = "0";
+                        return;
+                    }
+                    // rangeStrs[0] is min, rangeStrs[1] is max
+                    Value = rangeAttr.SymbolValue.Split(',')[0];
+                }
+                return;
+            }
             // Set first entry as default
             // when choice do not has "optional" and "Default" option.
             if (EntryType != MenuEntryType.Choice)
                 return;
-            if (_value == null)
+            if (Value == null)
             {
                 // do not modify value when value is null and has optional option.
                 if (IsHaveOptionalOption)
                     return;
-                SetErrors(nameof(Value), new List<string>() { "Value is null and do not has optional option" });
             }
             else
             {
                 // check if value is a valid child entry name
-                if (ChildEntries.Exists(entry => entry.Name == _value))
+                if (ChildEntries.Exists(entry => entry.Name == Value))
                     return;
                 if (IsHaveOptionalOption)
                 {
-                    _value = null;
+                    Value = null;
                     return;
                 }
-                SetErrors(nameof(Value), new List<string>() { "Value is not a valid child entry name" });
             }
-            _value = ChildEntries.First()?.Name;
+            Value = ChildEntries.First()?.Name;
         }
 
         private static TristateValue CalculateValueMin(IEnumerable<MenuEntry> list)

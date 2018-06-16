@@ -23,7 +23,7 @@
   Date         Notes
   2018-06-05   first implementation
   ============================================================================
-  $Id:: UcKconfigTreeView.xaml 1806 2018-06-16 07:49:08Z fupengfei           $
+  $Id:: UcKconfigTreeView.xaml 1807 2018-06-16 09:46:42Z fupengfei           $
 -->
 <UserControl x:Class="Arda.ArmDevTool.Kconfig.UcKconfigTreeView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -247,7 +247,7 @@
                 </Grid.ColumnDefinitions>
                 <Image Source="Resources/choice.png" Width="16" Height="16" VerticalAlignment="Center"/>
                 <TextBlock Text="{Binding Prompt}" VerticalAlignment="Center" Grid.Column="1"/>
-                <TextBlock VerticalAlignment="Center" Grid.Column="3">
+                <TextBlock VerticalAlignment="Center" Grid.Column="3" Margin="0,0,2,0">
                     <TextBlock.Text>
                         <MultiBinding Converter="{StaticResource ConverterChoiceToValuePrompt}">
                             <Binding Path="Value"/>
@@ -265,6 +265,6 @@
               VirtualizingStackPanel.VirtualizationMode ="Recycling"
               ItemTemplate="{StaticResource MenuEntryTemplate}"
               ItemContainerStyle="{StaticResource MenuEntryStyle}"
-              HorizontalContentAlignment="Stretch" >
+              HorizontalContentAlignment="Stretch">
     </TreeView>
 </UserControl>
