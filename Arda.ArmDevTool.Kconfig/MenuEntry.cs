@@ -23,7 +23,7 @@
 //  Date         Notes
 //  2015-09-15   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: MenuEntry.cs 1807 2018-06-16 09:46:42Z fupengfei                     $
+//  $Id:: MenuEntry.cs 1808 2018-06-16 15:34:00Z fupengfei                     $
 //------------------------------------------------------------------------------
 using System;
 using System.Collections;
@@ -390,46 +390,51 @@ namespace Arda.ArmDevTool.Kconfig
         /// null for choice with Optional option
         /// first child entry name for choice without Optional option
         /// </summary>
-        private void LoadDefaultValue()
+        private void LoadDefaultValue(bool isProcessValueChange)
         {
-            Value = Default;
+            var defaultValue = CalculateDefaultValue();
+            if (isProcessValueChange)
+                Value = defaultValue;
+            else
+                _value = defaultValue;
+        }
+
+        private string CalculateDefaultValue()
+        {
+            var value = Default;
             if (ValueType == MenuAttributeType.Int || ValueType == MenuAttributeType.Hex)
             {
-                if (Value == null)
+                if (value == null)
                 {
                     var rangeAttr = FindFirstAvaliable(MenuAttributeType.Range);
                     if (rangeAttr == null)
                     {
-                        Value = "0";
-                        return;
+                        return "0";
                     }
                     // rangeStrs[0] is min, rangeStrs[1] is max
-                    Value = rangeAttr.SymbolValue.Split(',')[0];
+                    value = rangeAttr.SymbolValue.Split(',')[0];
                 }
-                return;
+                return value;
             }
             // Set first entry as default
             // when choice do not has "optional" and "Default" option.
             if (EntryType != MenuEntryType.Choice)
-                return;
-            if (Value == null)
+                return value;
+            // do not modify value when value is null and has optional option.
+            if (value == null)
             {
-                // do not modify value when value is null and has optional option.
                 if (IsHaveOptionalOption)
-                    return;
+                    return null;
             }
             else
             {
                 // check if value is a valid child entry name
-                if (ChildEntries.Exists(entry => entry.Name == Value))
-                    return;
+                if (ChildEntries.Exists(entry => entry.Name == _value))
+                    return value;
                 if (IsHaveOptionalOption)
-                {
-                    Value = null;
-                    return;
-                }
+                    return null;
             }
-            Value = ChildEntries.First()?.Name;
+            return ChildEntries.First()?.Name;
         }
 
         private static TristateValue CalculateValueMin(IEnumerable<MenuEntry> list)
@@ -516,13 +521,14 @@ namespace Arda.ArmDevTool.Kconfig
                     Prompt = FindFirstAvaliable(MenuAttributeType.Prompt)?.SymbolValue;
                     Default = FindFirstAvaliable(MenuAttributeType.Default)?.SymbolValue;
 
+
                     // For those hidden entries which prompt is null. 
                     // Since user could not modify them, they should be calculated automatically
                     // by auto load default value.
-                    if (isLoadDefault || Prompt == null)
-                    {
-                        LoadDefaultValue();
-                    }
+                    if (isLoadDefault)
+                        LoadDefaultValue(false);
+                    else if (Prompt == null)
+                        LoadDefaultValue(true);
 
                     if (!IsEnable)
                     {
