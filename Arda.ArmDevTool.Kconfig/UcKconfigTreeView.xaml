@@ -23,7 +23,7 @@
   Date         Notes
   2018-06-05   first implementation
   ============================================================================
-  $Id:: UcKconfigTreeView.xaml 1802 2018-06-05 07:02:51Z arda                $
+  $Id:: UcKconfigTreeView.xaml 1806 2018-06-16 07:49:08Z fupengfei           $
 -->
 <UserControl x:Class="Arda.ArmDevTool.Kconfig.UcKconfigTreeView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -41,6 +41,7 @@
         <local:ValueToTristateConverter x:Key="ConverterValueToTristate"/>
         <local:MenuEntryDataTemplateSelector x:Key="MenuEntryTemplateSelector" />
         <local:ValueTypeToIsTristateConverter x:Key="ConverterValueTypeToIsTristate"/>
+        <local:ChoiceToValuePromptConverter x:Key="ConverterChoiceToValuePrompt"/>
         <local:MenuEntryToToolTipConverter x:Key="ConverterMenuEntryToToolTip"/>
 
         <Style x:Key="TreeViewItemFocusVisual">
@@ -89,8 +90,10 @@
 
         <Style x:Key="MenuEntryStyleBase" TargetType="{x:Type TreeViewItem}">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="HorizontalContentAlignment" Value="{Binding Path=HorizontalContentAlignment, RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}}"/>
-            <Setter Property="VerticalContentAlignment" Value="{Binding Path=VerticalContentAlignment, RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}}"/>
+            <Setter Property="HorizontalContentAlignment" Value="{Binding Path=HorizontalContentAlignment, 
+                RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}}"/>
+            <Setter Property="VerticalContentAlignment" Value="{Binding Path=VerticalContentAlignment, 
+                RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}}"/>
             <Setter Property="Padding" Value="1,0,0,0"/>
             <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
             <Setter Property="FocusVisualStyle" Value="{StaticResource TreeViewItemFocusVisual}"/>
@@ -107,10 +110,13 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition/>
                             </Grid.RowDefinitions>
-                            <ToggleButton x:Name="Expander" Style="{StaticResource ExpandCollapseToggleStyle}" ClickMode="Press" IsChecked="{Binding Path=IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            <ToggleButton x:Name="Expander" Style="{StaticResource ExpandCollapseToggleStyle}" ClickMode="Press" 
+                                          IsChecked="{Binding Path=IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"/>
                             <Border x:Name="Bd" SnapsToDevicePixels="true" Grid.Column="1" Grid.Row="0"
-                                    Grid.ColumnSpan="2" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}">
-                                <ContentPresenter x:Name="PART_Header" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" ContentSource="Header"/>
+                                    Grid.ColumnSpan="2" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" 
+                                    BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}">
+                                <ContentPresenter x:Name="PART_Header" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" ContentSource="Header"/>
                             </Border>
                             <ItemsPresenter x:Name="ItemsHost" Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="1"/>
                         </Grid>
@@ -236,10 +242,19 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <Image Source="Resources/choice.png" Width="16" Height="16" VerticalAlignment="Center"/>
-                <TextBlock Text="{Binding Prompt}" VerticalAlignment="Center" Grid.Column="2"/>
+                <TextBlock Text="{Binding Prompt}" VerticalAlignment="Center" Grid.Column="1"/>
+                <TextBlock VerticalAlignment="Center" Grid.Column="3">
+                    <TextBlock.Text>
+                        <MultiBinding Converter="{StaticResource ConverterChoiceToValuePrompt}">
+                            <Binding Path="Value"/>
+                            <Binding Path="ChildEntries"/>
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
             </Grid>
         </HierarchicalDataTemplate>
 

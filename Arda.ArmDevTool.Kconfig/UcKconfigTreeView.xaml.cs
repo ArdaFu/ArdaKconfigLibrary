@@ -23,12 +23,14 @@
 //  Date         Notes
 //  2018-06-05   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: UcKconfigTreeView.xaml.cs 1802 2018-06-05 07:02:51Z arda             $
+//  $Id:: UcKconfigTreeView.xaml.cs 1806 2018-06-16 07:49:08Z fupengfei        $
 //------------------------------------------------------------------------------
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -199,6 +201,28 @@ namespace Arda.ArmDevTool.Kconfig
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             throw new NotImplementedException();
+        }
+    }
+
+    public class ChoiceToValuePromptConverter : IMultiValueConverter
+    {
+        public object Convert(object[] value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value == null || value.Length != 2)
+                return null;
+            if (!(value[0] is string selectName) || !(value[1] is List<MenuEntry> children))
+            {
+                return null;
+            }
+
+            var selectedChildEntry = children.First(child => child.Name == selectName);
+
+            return selectedChildEntry?.Prompt;
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotSupportedException();
         }
     }
 
