@@ -23,7 +23,7 @@
 //  Date         Notes
 //  2015-09-15   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: MenuEntry.cs 1809 2018-06-16 15:41:29Z fupengfei                     $
+//  $Id:: MenuEntry.cs 1810 2018-06-23 10:04:42Z fupengfei                     $
 //------------------------------------------------------------------------------
 using System;
 using System.Collections;
@@ -369,7 +369,7 @@ namespace Arda.ArmDevTool.Kconfig
         /// </summary>
         /// <param name="type">attribute type</param>
         /// <returns>null when do not find</returns>
-        private MenuAttribute FindFirstAvaliable(MenuAttributeType type)
+        internal MenuAttribute FindFirstAvaliable(MenuAttributeType type)
         {
             return Attributes.FirstOrDefault(attribute =>
                 attribute.AttributeType == type

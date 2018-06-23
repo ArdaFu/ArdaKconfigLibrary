@@ -23,7 +23,7 @@
 //  Date         Notes
 //  2018-06-05   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: UcKconfigTreeView.xaml.cs 1806 2018-06-16 07:49:08Z fupengfei        $
+//  $Id:: UcKconfigTreeView.xaml.cs 1810 2018-06-23 10:04:42Z fupengfei        $
 //------------------------------------------------------------------------------
 using System;
 using System.Collections;
@@ -178,16 +178,15 @@ namespace Arda.ArmDevTool.Kconfig
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (!(value is MenuEntry entry))
-            {
                 return null;
-            }
+
             var sb = new StringBuilder();
             sb.AppendLine(string.IsNullOrEmpty(entry.Name)
                 ? $"[{entry.EntryType}] {entry.Prompt}"
                 : $"[{entry.EntryType}] {entry.Name}");
             sb.AppendLine($"{entry.Location}");
             if (entry.NestDependsOnExpression != null)
-                sb.AppendLine($"DependsOn = {entry.NestDependsOnExpression}");
+                sb.AppendLine($"Depends on = {entry.NestDependsOnExpression}");
             foreach (var menuEntry in entry.BeSelectedList)
                 sb.AppendLine($"[Be selected by] {menuEntry.Name}");
             foreach (var menuEntry in entry.BeImpliedList)
