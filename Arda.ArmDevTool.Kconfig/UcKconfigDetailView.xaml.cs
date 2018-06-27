@@ -23,9 +23,10 @@
 //  Date         Notes
 //  2018-06-023   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: UcKconfigDetailView.xaml.cs 1810 2018-06-23 10:04:42Z fupengfei      $
+//  $Id:: UcKconfigDetailView.xaml.cs 1814 2018-06-27 02:44:14Z arda           $
 //------------------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Documents;
@@ -39,11 +40,24 @@ namespace Arda.ArmDevTool.Kconfig
     /// </summary>
     public partial class UcKconfigDetailView
     {
+
+        /// <summary>
+        /// User provide method to jump to select MenuEntry.
+        /// </summary>
+        public Action<MenuEntry> ActionJumpToMenuEntry;
+
+        public UcKconfigDetailView()
+        {
+            InitializeComponent();
+        }
+
+        #region DependencyProperty MenuEntry
+
         public static readonly DependencyProperty MenuEntryProperty =
             DependencyProperty.Register("MenuEntry", typeof(MenuEntry),
                 typeof(UcKconfigDetailView), new FrameworkPropertyMetadata
                     (null, OnMenuEntryChanged));
-        
+
         /// <summary>
         /// Detail view will render this menu entry.
         /// </summary>
@@ -59,18 +73,26 @@ namespace Arda.ArmDevTool.Kconfig
         {
             if (args.NewValue != null && obj is UcKconfigDetailView view)
             {
-                view.RtBox.Document = Convert(args.NewValue as MenuEntry);
+                view.RtBox.Document = RenderMenuEntry(args.NewValue as MenuEntry, view);
             }
         }
 
-        public UcKconfigDetailView()
-        {
-            InitializeComponent();
-        }
+        #endregion //DependencyProperty MenuEntry
 
-        private const string StrNoHelp = "There is no help available for this option.";
+        #region Render MenuEntry
 
-        private static FlowDocument Convert(MenuEntry entry)
+        /// <summary>
+        /// Using this as help message when help attribute is not found.
+        /// </summary>
+        private const string StrNoHelp = @"There is no help available.";
+
+        /// <summary>
+        /// Render MenuEntry as FlowDocument
+        /// </summary>
+        /// <param name="entry"></param>
+        /// <param name="view"></param>
+        /// <returns></returns>
+        private static FlowDocument RenderMenuEntry(MenuEntry entry, UcKconfigDetailView view)
         {
             // prompt
             var doc = new FlowDocument();
@@ -96,7 +118,7 @@ namespace Arda.ArmDevTool.Kconfig
 
             // help
             {
-                var para = new Paragraph() {Margin = new Thickness(5)};
+                var para = new Paragraph() {Margin = new Thickness(20, 5, 5, 5)};
 
                 var attr = entry.FindFirstAvaliable(MenuAttributeType.Help);
                 if (attr == null)
@@ -110,75 +132,86 @@ namespace Arda.ArmDevTool.Kconfig
                 doc.Blocks.Add(para);
             }
 
-            // location
-            if (entry.Location != null)
+            var propList = new List()
             {
-                var para = new Paragraph()
-                {
-                    Foreground = Brushes.Green,
-                    Margin = new Thickness(5, 0, 5, 0),
-                };
-                para.Inlines.Add(entry.Location.ToString());
-                doc.Blocks.Add(para);
+                FontFamily = new FontFamily("Consolas"),
+                Margin = new Thickness(5, 5, 5, 10)
+            };
+
+            // be selected by
+            if (entry.BeSelectedList.Count != 0)
+            {
+                propList.ListItems.Add(RenderForwardDependencyList(
+                    entry.BeSelectedList, "Be selected by: ".PadRight(16), view));
+            }
+
+            // be implied by
+            if (entry.BeImpliedList.Count != 0)
+            {
+                propList.ListItems.Add(RenderForwardDependencyList(
+                    entry.BeImpliedList, "Be implied by: ".PadRight(16), view));
             }
 
             // depends on
-            var propList = new List() {FontFamily = new FontFamily("Consolas"), Margin = new Thickness(5, 5, 5, 10)};
             if (entry.DependsOnExpr != null)
             {
                 var para = new Paragraph();
-                para.Inlines.Add(new Run() {FontWeight = FontWeights.Bold, Text = "Depends on: "});
-                AddExpressionHyperlinks(entry.DependsOnExpr, para);
+                para.Inlines.Add(new Run()
+                {
+                    FontWeight = FontWeights.Bold,
+                    Text = "Depends on: ".PadRight(12)
+                });
+                RenderExpression(entry.DependsOnExpr, para, view);
                 propList.ListItems.Add(new ListItem(para));
-            }
-
-            // selected by
-            if (entry.BeSelectedList.Count != 0)
-            {
-                propList.ListItems.Add(
-                    GenerateForwardDepenceyAttribute(entry.BeSelectedList, "Be selected by: "));
-            }
-
-            // implied by
-            if (entry.BeImpliedList.Count != 0)
-            {
-                propList.ListItems.Add(
-                    GenerateForwardDepenceyAttribute(entry.BeImpliedList, "Be implied by: "));
             }
 
             // Attributes
             if (entry.Attributes.Count != 0)
             {
-
                 foreach (var attr in entry.Attributes)
                 {
-                    if (attr.AttributeType == MenuAttributeType.Help || attr.AttributeType == MenuAttributeType.Prompt)
+                    // skip depends on
+                    if (attr.AttributeType == MenuAttributeType.DependsOn)
+                        continue;
+
+                    // skip help and prompt without condition.
+                    if (attr.AttributeType == MenuAttributeType.Help
+                        || attr.AttributeType == MenuAttributeType.Prompt)
                         if (string.IsNullOrEmpty(attr.Condition))
                             continue;
 
                     var para = new Paragraph();
-                    para.Inlines.Add(new Run() {FontWeight = FontWeights.Bold, Text = $"{attr.AttributeType}: "});
+                    // title
+                    para.Inlines.Add(new Run()
+                    {
+                        FontWeight = FontWeights.Bold,
+                        Text = $"{attr.AttributeType}: ".PadRight(12)
+                    });
 
+                    // type
                     if (attr.ExpressionType != MenuAttributeType.Invalid)
                         para.Inlines.Add($"{attr.ExpressionType}");
 
-                    if (attr.AttributeType == MenuAttributeType.Imply || attr.AttributeType == MenuAttributeType.Select)
+                    // Reverse Dependency HyperLink
+                    if (attr.AttributeType == MenuAttributeType.Imply
+                        || attr.AttributeType == MenuAttributeType.Select)
                     {
                         if (attr.ReverseDependency != null)
-                            para.Inlines.Add(CreateHyperlink(attr.ReverseDependency));
+                            para.Inlines.Add(CreateHyperlink(attr.ReverseDependency, view));
                     }
                     else
                     {
                         if (!string.IsNullOrEmpty(attr.SymbolValue))
-                            para.Inlines.Add($"{attr.SymbolValue}");
+                            para.Inlines.Add(attr.SymbolValue);
                     }
 
+                    // Condition
                     if (attr.ConditionExpr != null)
                     {
                         para.Inlines.Add(attr.AttributeType == MenuAttributeType.DependsOn
                             ? " "
                             : " if ");
-                        AddExpressionHyperlinks(attr.ConditionExpr, para);
+                        RenderExpression(attr.ConditionExpr, para, view);
                     }
 
                     propList.ListItems.Add(new ListItem(para));
@@ -187,10 +220,31 @@ namespace Arda.ArmDevTool.Kconfig
             }
 
             doc.Blocks.Add(propList);
+
+            // location
+            if (entry.Location != null)
+            {
+                var para = new Paragraph()
+                {
+                    Foreground = Brushes.Green,
+                    Margin = new Thickness(5),
+                };
+                para.Inlines.Add(entry.Location.ToString());
+                doc.Blocks.Add(para);
+            }
+
             return doc;
         }
 
-        private static ListItem GenerateForwardDepenceyAttribute(IEnumerable<MenuEntry> entries, string title)
+        /// <summary>
+        /// Render Forward Dependency list to a paragraph with given attribute title.
+        /// </summary>
+        /// <param name="entries"></param>
+        /// <param name="title"></param>
+        /// <param name="view"></param>
+        /// <returns></returns>
+        private static ListItem RenderForwardDependencyList(IEnumerable<MenuEntry> entries,
+            string title, UcKconfigDetailView view)
         {
             var para = new Paragraph();
             para.Inlines.Add(new Run() {FontWeight = FontWeights.Bold, Text = title});
@@ -201,118 +255,128 @@ namespace Arda.ArmDevTool.Kconfig
                     isFirst = false;
                 else
                     para.Inlines.Add(", ");
-                para.Inlines.Add(CreateHyperlink(menuEntry));
+                para.Inlines.Add(CreateHyperlink(menuEntry, view));
             }
 
             return new ListItem(para);
         }
 
-        private static void AddExpressionHyperlinks(Expression expr, Paragraph para, bool isHaveBrackets = false)
+        /// <summary>
+        /// Render standard 2 elements expression.
+        /// </summary>
+        /// <param name="para"></param>
+        /// <param name="expr"></param>
+        /// <param name="operatorStr"></param>
+        /// <param name="view"></param>
+        /// <param name="isHaveBrackets"></param>
+        private static void RenderExpression(Expression expr, Paragraph para,
+            string operatorStr, UcKconfigDetailView view, bool isHaveBrackets)
         {
-            switch (expr.Type)
-            {
-                case ExpressionType.And:
-                    if (isHaveBrackets)
-                        para.Inlines.Add("(");
-                    AddExpressionHyperlinks(expr.Left, para);
-                    para.Inlines.Add(" && ");
-                    AddExpressionHyperlinks(expr.Right, para);
-                    if (isHaveBrackets)
-                        para.Inlines.Add(")");
-                    return;
-                // return $"({Left} && {Right})";
-                case ExpressionType.Or:
-                    if (isHaveBrackets)
-                        para.Inlines.Add("(");
-                    AddExpressionHyperlinks(expr.Left, para);
-                    para.Inlines.Add(" || ");
-                    AddExpressionHyperlinks(expr.Right, para);
-                    if (isHaveBrackets)
-                        para.Inlines.Add(")");
-                    return;
-                case ExpressionType.Equal:
-                    if (isHaveBrackets)
-                        para.Inlines.Add("(");
-                    AddExpressionHyperlinks(expr.Left, para);
-                    para.Inlines.Add(" = ");
-                    AddExpressionHyperlinks(expr.Right, para);
-                    if (isHaveBrackets)
-                        para.Inlines.Add(")");
-                    return;
-                case ExpressionType.NoEuqal:
-                    if (isHaveBrackets)
-                        para.Inlines.Add("(");
-                    AddExpressionHyperlinks(expr.Left, para);
-                    para.Inlines.Add(" != ");
-                    AddExpressionHyperlinks(expr.Right, para);
-                    if (isHaveBrackets)
-                        para.Inlines.Add(")");
-                    return;
-                case ExpressionType.Not:
-                    para.Inlines.Add(isHaveBrackets ? "(! " : "! ");
-                    AddExpressionHyperlinks(expr.Right, para);
-                    if (isHaveBrackets)
-                        para.Inlines.Add(")");
-                    return;
-                case ExpressionType.None:
-                    AddExpressionHyperlinks(expr.Right, para);
-                    return;
-                case ExpressionType.N:
-                    para.Inlines.Add(new Run($"n") {Foreground = Brushes.Brown});
-                    return;
-
-                case ExpressionType.M:
-                    para.Inlines.Add(new Run($"m") {Foreground = Brushes.Brown});
-                    return;
-
-                case ExpressionType.Y:
-                    para.Inlines.Add(new Run($"y") {Foreground = Brushes.Brown});
-                    return;
-
-                default:
-                    para.Inlines.Add("");
-                    return;
-            }
+            if (isHaveBrackets)
+                para.Inlines.Add("(");
+            RenderExpression(expr.Left, para, view);
+            para.Inlines.Add($" {operatorStr} ");
+            RenderExpression(expr.Right, para, view);
+            if (isHaveBrackets)
+                para.Inlines.Add(")");
         }
 
-        private static void AddExpressionHyperlinks(ExpressionData exprData, Paragraph para)
+        /// <summary>
+        /// Render expression data.
+        /// </summary>
+        /// <param name="exprData"></param>
+        /// <param name="para"></param>
+        /// <param name="view"></param>
+        private static void RenderExpression(ExpressionData exprData,
+            Paragraph para, UcKconfigDetailView view)
         {
             if (exprData.Expr == null)
             {
                 if (exprData.Symbol.IsConst)
-                    para.Inlines.Add(new Run($"\"{exprData.Symbol.Name}\"") {Foreground = Brushes.DarkGreen});
+                    para.Inlines.Add(new Run($"\"{exprData.Symbol.Name}\"")
+                    {
+                        Foreground = Brushes.DarkGreen
+                    });
                 else
-                    para.Inlines.Add(CreateHyperlink(exprData.Symbol));
+                    para.Inlines.Add(CreateHyperlink(exprData.Symbol, view));
                 return;
             }
 
-            AddExpressionHyperlinks(exprData.Expr, para, true);
+            RenderExpression(exprData.Expr, para, view, true);
         }
 
         /// <summary>
-        /// Create hyperlink for each menuentry. Jump to the menuebtry when user LMB click on it.
+        /// Render expression.
         /// </summary>
-        /// <param name="entry"></param>
-        /// <returns></returns>
-        private static Hyperlink CreateHyperlink(MenuEntry entry)
+        /// <param name="expr"></param>
+        /// <param name="para"></param>
+        /// <param name="view"></param>
+        /// <param name="isHaveBrackets"></param>
+        private static void RenderExpression(Expression expr, Paragraph para,
+            UcKconfigDetailView view, bool isHaveBrackets = false)
         {
-            var hl = new Hyperlink() {Inlines = {new Run($"{entry.Name}")}};
-            hl.Inlines.Add(new Run($"(={entry.Value})") {Foreground = Brushes.Brown});
-            hl.MouseLeftButtonDown += (sender, e) =>
+            switch (expr.Type)
             {
-                // jump to seletced meny entry
-                var selectEntry = entry;
-                var parent = entry.ParentEntry;
-                while (parent != null)
-                {
-                    if (!selectEntry.IsVisible)
-                        selectEntry = parent;
-                    parent.IsExpanded = true;
-                    parent = parent.ParentEntry;
-                }
-                selectEntry.IsSelected = true;
+                case ExpressionType.And:
+                    RenderExpression(expr, para, "&&", view, isHaveBrackets);
+                    return;
+                case ExpressionType.Or:
+                    RenderExpression(expr, para, "||", view, isHaveBrackets);
+                    return;
+                case ExpressionType.Equal:
+                    RenderExpression(expr, para, "==", view, isHaveBrackets);
+                    return;
+                case ExpressionType.NoEuqal:
+                    RenderExpression(expr, para, "!=", view, isHaveBrackets);
+                    return;
+                case ExpressionType.Not:
+                    para.Inlines.Add(isHaveBrackets ? "(! " : "! ");
+                    RenderExpression(expr.Right, para, view);
+                    if (isHaveBrackets)
+                        para.Inlines.Add(")");
+                    return;
+                case ExpressionType.None:
+                    RenderExpression(expr.Right, para, view);
+                    return;
+                case ExpressionType.N:
+                    para.Inlines.Add(new Run("n") {Foreground = Brushes.Brown});
+                    return;
+
+                case ExpressionType.M:
+                    para.Inlines.Add(new Run("m") {Foreground = Brushes.Brown});
+                    return;
+
+                case ExpressionType.Y:
+                    para.Inlines.Add(new Run("y") {Foreground = Brushes.Brown});
+                    return;
+
+                default:
+                    return;
+            }
+        }
+
+        /// <summary>
+        /// Create hyper link for each menu entry.
+        /// Jump to the MenuEntry when user LMB click on it.
+        /// </summary>
+        /// <param name="entry">jump target</param>
+        /// <param name="view">UI element to provide ActionJumpToMenuEntry</param>
+        /// <returns></returns>
+        private static Hyperlink CreateHyperlink(MenuEntry entry, UcKconfigDetailView view)
+        {
+            var hl = new Hyperlink()
+            {
+                Inlines = {new Run($"{entry.Name}")},
+                Foreground = entry.IsVisible ? Brushes.Blue : Brushes.DarkMagenta,
+                Focusable = true,
             };
+            hl.Inlines.Add(new Run($"(={entry.Value})") {Foreground = Brushes.Brown});
+
+            if (entry.IsVisible && view.ActionJumpToMenuEntry != null)
+                hl.MouseLeftButtonDown += (sender, e) => view.ActionJumpToMenuEntry(entry);
             return hl;
         }
+
+        #endregion Render MenuEntry
     }
 }

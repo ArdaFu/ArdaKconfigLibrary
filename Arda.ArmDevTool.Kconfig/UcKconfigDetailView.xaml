@@ -23,7 +23,7 @@
   Date         Notes
   2018-06-05   first implementation
   ============================================================================
-  $Id:: UcKconfigDetailView.xaml 1810 2018-06-23 10:04:42Z fupengfei         $
+  $Id:: UcKconfigDetailView.xaml 1812 2018-06-25 10:17:17Z arda              $
 -->
 <UserControl x:Class="Arda.ArmDevTool.Kconfig.UcKconfigDetailView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -34,14 +34,14 @@
              xmlns:kconfig="clr-namespace:Arda.ArmDevTool.Kconfig;assembly=ArdaKconfigLib"
              mc:Ignorable="d" 
              d:DesignHeight="100" d:DesignWidth="600">
-    <RichTextBox x:Name="RtBox" IsReadOnly="True">
+    <RichTextBox x:Name="RtBox" IsReadOnly="True" AllowDrop="False">
         <RichTextBox.Resources>
             <Style TargetType="{x:Type Paragraph}">
                 <Setter Property="Margin" Value="5"/>
             </Style>
             <Style TargetType="{x:Type Hyperlink}">
+                <Setter Property="Cursor" Value="Hand" />
                 <Setter Property="TextDecorations" Value="{x:Null}"/>
-                <Setter Property="Foreground" Value="Blue"/>
             </Style>
         </RichTextBox.Resources>
     </RichTextBox>
