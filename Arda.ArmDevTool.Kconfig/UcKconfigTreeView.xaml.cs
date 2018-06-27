@@ -23,7 +23,7 @@
 //  Date         Notes
 //  2018-06-05   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: UcKconfigTreeView.xaml.cs 1810 2018-06-23 10:04:42Z fupengfei        $
+//  $Id:: UcKconfigTreeView.xaml.cs 1814 2018-06-27 02:44:14Z arda             $
 //------------------------------------------------------------------------------
 using System;
 using System.Collections;
@@ -36,8 +36,9 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
-
+using TreeViewItem = System.Windows.Controls.TreeViewItem;
 
 namespace Arda.ArmDevTool.Kconfig
 {
@@ -49,7 +50,8 @@ namespace Arda.ArmDevTool.Kconfig
         public UcKconfigTreeView()
         {
             InitializeComponent();
-            TreeView.SelectedItemChanged += (sender,e)=> OnPropertyChanged(nameof(SelectedItem)); 
+            TreeView.SelectedItemChanged += (sender, e) =>
+                OnPropertyChanged(nameof(SelectedItem));
         }
 
         public object SelectedItem => TreeView.SelectedItem;
@@ -70,8 +72,50 @@ namespace Arda.ArmDevTool.Kconfig
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+
+        public void JumpToEntry(MenuEntry targetEntry)
+        {
+            if (targetEntry == null)
+                return;
+
+            if (SelectedItem is MenuEntry old)
+                old.IsSelected = false;
+
+            var ancestorList = new List<MenuEntry> {targetEntry};
+            {
+                var parent = targetEntry.ParentEntry;
+                while (parent != null)
+                {
+                    ancestorList.Add(parent);
+                    parent = parent.ParentEntry;
+                }
+            }
+            ancestorList.Reverse();
+
+            ItemsControl control = TreeView;
+            TreeViewItem treeViewItem = null;
+
+            foreach (var entry in ancestorList)
+            {
+                if (control.ItemContainerGenerator.Status != GeneratorStatus.ContainersGenerated)
+                    control.UpdateLayout();
+                treeViewItem = control.ItemContainerGenerator.ContainerFromItem(entry) as TreeViewItem;
+                control = treeViewItem;
+
+                if (treeViewItem == null)
+                    break;
+                treeViewItem.IsExpanded = true;
+            }
+
+            if (treeViewItem == null)
+                return;
+            treeViewItem.IsSelected = true;
+            treeViewItem.BringIntoView();
+            treeViewItem.Focus();
+        }
     }
-    
+
+    #region Converters
     [ValueConversion(typeof(MenuEntryType), typeof(string))]
     public class EntryTypeToIconPathConverter : IValueConverter
     {
@@ -185,15 +229,15 @@ namespace Arda.ArmDevTool.Kconfig
                 ? $"[{entry.EntryType}] {entry.Prompt}"
                 : $"[{entry.EntryType}] {entry.Name}");
             sb.AppendLine($"{entry.Location}");
-            if (entry.NestDependsOnExpression != null)
-                sb.AppendLine($"Depends on = {entry.NestDependsOnExpression}");
-            foreach (var menuEntry in entry.BeSelectedList)
-                sb.AppendLine($"[Be selected by] {menuEntry.Name}");
-            foreach (var menuEntry in entry.BeImpliedList)
-                sb.AppendLine($"[Be implied by] {menuEntry.Name}");
 
+            foreach (var menuEntry in entry.BeSelectedList)
+                sb.AppendLine($"  [Be selected by] = {menuEntry.Name}");
+            foreach (var menuEntry in entry.BeImpliedList)
+                sb.AppendLine($"  [Be implied by] = {menuEntry.Name}");
+            if (entry.NestDependsOnExpression != null)
+                sb.AppendLine($"  [Depends on] = {entry.NestDependsOnExpression}");
             foreach (var attr in entry.Attributes)
-                sb.AppendLine(attr.ToString());
+                sb.AppendLine($"  {attr}");
             return RemoveEndBlankRegex.Match(sb.ToString()).Groups["string"].Value;
         }
 
@@ -262,4 +306,6 @@ namespace Arda.ArmDevTool.Kconfig
             }
         }
     }
+
+    #endregion //Converters
 }
