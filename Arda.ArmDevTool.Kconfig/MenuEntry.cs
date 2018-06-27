@@ -23,7 +23,7 @@
 //  Date         Notes
 //  2015-09-15   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: MenuEntry.cs 1810 2018-06-23 10:04:42Z fupengfei                     $
+//  $Id:: MenuEntry.cs 1815 2018-06-27 05:02:17Z arda                          $
 //------------------------------------------------------------------------------
 using System;
 using System.Collections;
@@ -347,7 +347,7 @@ namespace Arda.ArmDevTool.Kconfig
         {
 
             error = null;
-            var rangeAttr = FindFirstAvaliable(MenuAttributeType.Range);
+            var rangeAttr = FindFirstAvailable(MenuAttributeType.Range);
             if (rangeAttr == null)
                 return true;
             var rangeStrs = rangeAttr.SymbolValue.Split(',');
@@ -369,7 +369,7 @@ namespace Arda.ArmDevTool.Kconfig
         /// </summary>
         /// <param name="type">attribute type</param>
         /// <returns>null when do not find</returns>
-        internal MenuAttribute FindFirstAvaliable(MenuAttributeType type)
+        private MenuAttribute FindFirstAvailable(MenuAttributeType type)
         {
             return Attributes.FirstOrDefault(attribute =>
                 attribute.AttributeType == type
@@ -382,6 +382,11 @@ namespace Arda.ArmDevTool.Kconfig
         /// </summary>
         public bool IsHaveOptionalOption =>
              Attributes.Exists(attr => attr.AttributeType == MenuAttributeType.Optional);
+
+        /// <summary>
+        /// First available help string
+        /// </summary>
+        public string Help => FindFirstAvailable(MenuAttributeType.Help)?.SymbolValue;
 
         /// <summary>
         /// Load default and check value valid.
@@ -406,7 +411,7 @@ namespace Arda.ArmDevTool.Kconfig
             {
                 if (value == null)
                 {
-                    var rangeAttr = FindFirstAvaliable(MenuAttributeType.Range);
+                    var rangeAttr = FindFirstAvailable(MenuAttributeType.Range);
                     if (rangeAttr == null)
                     {
                         return "0";
@@ -508,7 +513,7 @@ namespace Arda.ArmDevTool.Kconfig
                         break;
                     }
 
-                    var attr = FindFirstAvaliable(MenuAttributeType.VisibleIf);
+                    var attr = FindFirstAvailable(MenuAttributeType.VisibleIf);
                     IsVisible = attr == null || attr.ConditionResult != TristateValue.N;
                     break;
                 case MenuEntryType.Comment:
@@ -518,8 +523,8 @@ namespace Arda.ArmDevTool.Kconfig
                 case MenuEntryType.Config:
                 case MenuEntryType.MenuConfig:
                 case MenuEntryType.Choice:
-                    Prompt = FindFirstAvaliable(MenuAttributeType.Prompt)?.SymbolValue;
-                    Default = FindFirstAvaliable(MenuAttributeType.Default)?.SymbolValue;
+                    Prompt = FindFirstAvailable(MenuAttributeType.Prompt)?.SymbolValue;
+                    Default = FindFirstAvailable(MenuAttributeType.Default)?.SymbolValue;
 
 
                     // For those hidden entries which prompt is null. 

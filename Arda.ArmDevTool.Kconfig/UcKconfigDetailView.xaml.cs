@@ -23,7 +23,7 @@
 //  Date         Notes
 //  2018-06-023   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: UcKconfigDetailView.xaml.cs 1814 2018-06-27 02:44:14Z arda           $
+//  $Id:: UcKconfigDetailView.xaml.cs 1815 2018-06-27 05:02:17Z arda           $
 //------------------------------------------------------------------------------
 
 using System;
@@ -103,7 +103,7 @@ namespace Arda.ArmDevTool.Kconfig
                     FontWeight = FontWeights.Bold,
                     FontSize = 16
                 };
-                para.Inlines.Add(entry.Prompt);
+                para.Inlines.Add(entry.Prompt ?? "No Prompt");
                 doc.Blocks.Add(para);
             }
 
@@ -112,7 +112,7 @@ namespace Arda.ArmDevTool.Kconfig
                 if (!string.IsNullOrEmpty(entry.Name))
                 {
                     var para = new Paragraph() {Foreground = Brushes.DarkRed, Margin = new Thickness(5), FontSize = 14};
-                    para.Inlines.Add(entry.Name);
+                    para.Inlines.Add(entry.Name?? "No Name");
                     doc.Blocks.Add(para);
                 }
 
@@ -120,14 +120,14 @@ namespace Arda.ArmDevTool.Kconfig
             {
                 var para = new Paragraph() {Margin = new Thickness(20, 5, 5, 5)};
 
-                var attr = entry.FindFirstAvaliable(MenuAttributeType.Help);
-                if (attr == null)
+                var help = entry.Help;
+                if (help == null)
                 {
                     para.Inlines.Add(StrNoHelp);
                     para.Foreground = Brushes.Gray;
                 }
                 else
-                    para.Inlines.Add(attr.SymbolValue);
+                    para.Inlines.Add(help);
 
                 doc.Blocks.Add(para);
             }
