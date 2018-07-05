@@ -23,7 +23,7 @@
 //  Date         Notes
 //  2018-06-05   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: UcKconfigTreeView.xaml.cs 1814 2018-06-27 02:44:14Z arda             $
+//  $Id:: UcKconfigTreeView.xaml.cs 1817 2018-07-05 06:45:58Z fupengfei        $
 //------------------------------------------------------------------------------
 using System;
 using System.Collections;
@@ -153,17 +153,21 @@ namespace Arda.ArmDevTool.Kconfig
         }
     }
 
+    /// <summary>
+    /// Combine IsVisable and IsFiltered to Visibility
+    /// </summary>
     [ValueConversion(typeof(bool), typeof(Visibility))]
-    public class BoolToVisibleConverter : IValueConverter
+    public class VisibleConverter : IMultiValueConverter
     {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value == null)
+            if (values == null)
                 return Visibility.Collapsed;
-            return (bool)value ? Visibility.Visible : Visibility.Collapsed;
+            // value[0]: isVisable, value[1]: isFiltered
+            return (bool)values[0] && (!(bool)values[1]) ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
         {
             throw new NotImplementedException();
         }

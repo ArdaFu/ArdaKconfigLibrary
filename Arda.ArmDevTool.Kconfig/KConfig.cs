@@ -23,12 +23,14 @@
 //  Date         Notes
 //  2015-09-15   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: KConfig.cs 1679 2018-01-25 04:00:30Z fupengfei                       $
+//  $Id:: KConfig.cs 1817 2018-07-05 06:45:58Z fupengfei                       $
 //------------------------------------------------------------------------------
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media;
 
@@ -52,6 +54,21 @@ namespace Arda.ArmDevTool.Kconfig
         public HashSet<MenuEntry> CirculationDependsOnItems { get; private set; }
 
         /// <summary>
+        /// This flat list is used as searching source
+        /// </summary>
+        private MenuEntry[] _flatList;
+
+        /// <summary>
+        /// Is searching filter enable
+        /// </summary>
+        public bool IsFilterEnable { get; private set; }
+
+        /// <summary>
+        /// Mutex for STA operation methods: parse, write .config and search entry.
+        /// </summary>
+        private readonly Mutex _opMutex = new Mutex(true);
+
+        /// <summary>
         /// Parse kconfig file to menu entry
         /// </summary>
         /// <param name="fileName">kconfig file name</param>
@@ -59,41 +76,52 @@ namespace Arda.ArmDevTool.Kconfig
         /// <returns>menu entry</returns>
         public async Task<int> Parse(string fileName, int tabWidth = 4)
         {
-            // parse files to menu entry
-            Entries = await KConfigParser.Parse(fileName, tabWidth);
-            if (Entries == null)
-                return -1;
-
-            // nest structure to flat structure
-            var flatList = await KConfigProcess.ToFlat(Entries);
-
-            //Generate expression for all entry in entry list.
-            KConfigProcess.GenExpr(flatList);
-
-            // Generate hierarchical list
-            HierarchicalList = KConfigProcess.HierarchicalSort(flatList, out _, 
-                out var circulationDependsOnItems);
-            CirculationDependsOnItems = circulationDependsOnItems;
-            if (circulationDependsOnItems.Count != 0)
+            _opMutex.WaitOne();
+            try
             {
-                Console.WriteLine($"Found circulation depends on items, count = {circulationDependsOnItems.Count}",
-                    Brushes.Red);
-                foreach (var entry in circulationDependsOnItems)
+                IsFilterEnable = false;
+                // parse files to menu entry
+                Entries = await KConfigParser.Parse(fileName, tabWidth);
+                if (Entries == null)
+                    return -1;
+
+                // nest structure to flat structure
+                var flatList = await KConfigProcess.ToFlat(Entries);
+                _flatList = flatList.ToArray();
+
+                //Generate expression for all entry in entry list.
+                KConfigProcess.GenExpr(flatList);
+
+                // Generate hierarchical list
+                HierarchicalList = KConfigProcess.HierarchicalSort(flatList, out _,
+                    out var circulationDependsOnItems);
+                CirculationDependsOnItems = circulationDependsOnItems;
+                if (circulationDependsOnItems.Count != 0)
                 {
-                    Console.WriteLine($"[{entry.EntryType}]{entry.Name} {entry.Location}",
-                        Brushes.Black);
+                    Console.WriteLine($"Found circulation depends on items, count = {circulationDependsOnItems.Count}",
+                        Brushes.Red);
+                    foreach (var entry in circulationDependsOnItems)
+                    {
+                        Console.WriteLine($"[{entry.EntryType}]{entry.Name} {entry.Location}",
+                            Brushes.Black);
+                    }
+
+                    return -2;
                 }
-                return -2;
+
+                // Generate Control list
+                KConfigProcess.GenControls(HierarchicalList);
+
+                // load default values
+                LoadDefault();
+
+                // read .config file
+                return await ReadDotConfig();
             }
-
-            // Generate Control list
-            KConfigProcess.GenControls(HierarchicalList);
-
-            // load default values
-            LoadDefault();
-
-            // read .config file
-            return await ReadDotConfig();
+            finally
+            {
+                _opMutex.ReleaseMutex();
+            }
         }
 
         private void LoadDefault()
@@ -143,16 +171,20 @@ namespace Arda.ArmDevTool.Kconfig
                         entry.Value = item.Value;
                         continue;
                     }
+
                     if (entry.ValueType == item.Type)
                         entry.Value = item.Value;
                 }
+
                 foreach (var item in removeSet)
                 {
                     list.Remove(item);
                 }
+
                 if (list.Count == 0)
                     return 0;
             }
+
             return 0;
         }
 
@@ -162,7 +194,86 @@ namespace Arda.ArmDevTool.Kconfig
         /// <param name="fileName"></param>
         /// <returns></returns>
         public async Task<int> WriteDotConfig(string fileName = ".config")
-            => await DotConfigIo.WriteFile(Entries, fileName);
+        {
+            _opMutex.WaitOne();
+            try
+            {
+                return await DotConfigIo.WriteFile(Entries, fileName);
+            }
+            finally
+            {
+                _opMutex.ReleaseMutex();
+            }
+        }
 
+        /// <summary>
+        /// Search menu entry with given pattern or regex.
+        /// </summary>
+        /// <param name="str">pattern string or regex</param>
+        /// <param name="isSearchWithRegex">enable regex</param>
+        /// <returns>The child entries are the search result</returns>
+        public List<MenuEntry> FilterSelect(string str, bool isSearchWithRegex = false)
+        {
+            _opMutex.WaitOne();
+            try
+            {
+                Parallel.ForEach(_flatList, entry => entry.IsFiltered = true);
+
+                Func<string, bool> func;
+                if (isSearchWithRegex)
+                {
+                    var regex = new Regex(str, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+                    func = source => source != null && regex.IsMatch(source);
+                }
+                else
+                {
+                    func = source => source != null && source.Contains(str);
+                }
+
+                var result = _flatList.AsParallel().Where(entry =>
+                {
+                    // Search pattern in name and prompt only.
+                    entry.IsFiltered = !(func(entry.Name) || func(entry.Prompt));
+                    if (!entry.IsFiltered)
+                        UnFilterAncestor(entry);
+                    return entry.IsFiltered;
+                }).ToList();
+                IsFilterEnable = true;
+                return result;
+            }
+            finally
+            {
+                _opMutex.ReleaseMutex();
+            }
+        }
+
+        /// <summary>
+        /// Clear search filter.
+        /// </summary>
+        public void ClearFilter()
+        {
+            _opMutex.WaitOne();
+            try
+            {
+                Parallel.ForEach(_flatList, entry => entry.IsFiltered = false);
+                IsFilterEnable = false;
+            }
+            finally
+            {
+                _opMutex.ReleaseMutex();
+            }
+        }
+
+        /// <summary>
+        /// Unfilter menu entry's ancestor when it match the seach pattern.
+        /// </summary>
+        /// <param name="entry"></param>
+        private void UnFilterAncestor(MenuEntry entry)
+        {
+            if(entry.ParentEntry == null || !entry.ParentEntry.IsFiltered)
+                return;
+            entry.ParentEntry.IsFiltered = false;
+            UnFilterAncestor(entry.ParentEntry);
+        }
     }
 }

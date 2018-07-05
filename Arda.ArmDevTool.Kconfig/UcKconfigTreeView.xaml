@@ -23,7 +23,7 @@
   Date         Notes
   2018-06-05   first implementation
   ============================================================================
-  $Id:: UcKconfigTreeView.xaml 1813 2018-06-26 17:12:25Z fupengfei           $
+  $Id:: UcKconfigTreeView.xaml 1817 2018-07-05 06:45:58Z fupengfei           $
 -->
 <UserControl x:Class="Arda.ArmDevTool.Kconfig.UcKconfigTreeView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -37,7 +37,7 @@
 
     <UserControl.Resources>
         <local:EntryTypeToIconPathConverter x:Key="ConverterEntryTypeToIconPath"/>
-        <local:BoolToVisibleConverter x:Key="ConverterBoolToVisible"/>
+        <local:VisibleConverter x:Key="ConverterToVisible"/>
         <local:ValueToTristateConverter x:Key="ConverterValueToTristate"/>
         <local:MenuEntryDataTemplateSelector x:Key="MenuEntryTemplateSelector" />
         <local:ValueTypeToIsTristateConverter x:Key="ConverterValueTypeToIsTristate"/>
@@ -149,7 +149,14 @@
         </Style>
 
         <Style x:Key="MenuEntryStyle" TargetType="{x:Type TreeViewItem}" BasedOn="{StaticResource MenuEntryStyleBase}">
-            <Setter Property="Visibility" Value="{Binding IsVisible, Converter={StaticResource ConverterBoolToVisible}}"/>
+            <Setter Property="Visibility">
+                <Setter.Value>
+                    <MultiBinding Converter="{StaticResource ConverterToVisible}">
+                        <Binding Path="IsVisible"/>
+                        <Binding Path="IsFiltered"/>
+                    </MultiBinding>
+                </Setter.Value>
+            </Setter>
             <Setter Property="Margin" Value="1,1,1,1"/>
             <Setter Property="IsSelected" Value="{Binding Path=IsSelected, Mode=TwoWay}" />
             <Setter Property="IsExpanded" Value="{Binding Path=IsExpanded, Mode=TwoWay}" />

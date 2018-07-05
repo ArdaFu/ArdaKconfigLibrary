@@ -23,7 +23,7 @@
 //  Date         Notes
 //  2015-09-15   first implementation
 //------------------------------------------------------------------------------
-//  $Id:: MenuEntry.cs 1815 2018-06-27 05:02:17Z arda                          $
+//  $Id:: MenuEntry.cs 1817 2018-07-05 06:45:58Z fupengfei                     $
 //------------------------------------------------------------------------------
 using System;
 using System.Collections;
@@ -194,13 +194,25 @@ namespace Arda.ArmDevTool.Kconfig
         }
 
         /// <summary>
-        /// indicate entry is visible on UI
+        /// indicate entry is visible.
+        /// This property is used with IsFiltered to control the visibility on UI 
         /// </summary>
         public bool IsVisible
         {
             get => _isVisable;
             set => SetProperty(ref _isVisable, value);
         }
+
+        /// <summary>
+        /// Indicate entry is filtered when search filter is enable.
+        /// This property is used with IsVisible to control the visibility on UI 
+        /// </summary>
+        public bool IsFiltered
+        {
+            get => _isFiltered;
+            set => SetProperty(ref _isFiltered, value);
+        }
+
 
         /// <summary>
         /// indicate entry is enable in .config file
@@ -278,6 +290,7 @@ namespace Arda.ArmDevTool.Kconfig
         private string _default;
         private bool _isSelected;
         private bool _isExpanded;
+        private bool _isFiltered;
 
 
         #region check value in range
@@ -373,7 +386,7 @@ namespace Arda.ArmDevTool.Kconfig
         {
             return Attributes.FirstOrDefault(attribute =>
                 attribute.AttributeType == type
-                && attribute.ConditionResult != TristateValue.N);
+                && attribute.ConditionResult == TristateValue.Y);
         }
 
         /// <summary>
