@@ -56,12 +56,20 @@ namespace Arda.ArmDevTool.Kconfig
 
         public object SelectedItem => TreeView.SelectedItem;
 
+        public static readonly DependencyProperty ItemsSourceProperty =
+            DependencyProperty.RegisterAttached("ItemsSource", typeof(double), typeof(UcKconfigTreeView), new PropertyMetadata(null));
+
         public IEnumerable ItemsSource
         {
-            get => TreeView.ItemsSource;
+            get
+            {
+                return GetValue(ItemsSourceProperty) as IEnumerable;
+            }
+
             set
             {
                 TreeView.ItemsSource = value;
+                SetValue(ItemsSourceProperty, value);
                 OnPropertyChanged(nameof(ItemsSource));
             }
         }
