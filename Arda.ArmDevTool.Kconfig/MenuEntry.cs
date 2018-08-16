@@ -322,6 +322,9 @@ namespace Arda.ArmDevTool.Kconfig
                     return true;
                 error = "Choice value is not a valid child entry";
                 return false;
+            }else if(str == null)
+            {
+                return false;
             }
 
             if (EntryType != MenuEntryType.Config && EntryType != MenuEntryType.MenuConfig)
